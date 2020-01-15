@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Record Wall</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> <!-- 'nano' theme -->
+    <script src="https://unpkg.com/vanilla-picker@2"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+
+  <script src="https://unpkg.com/preact@8.5.2"></script>
+  <script>
+'use strict';
+const { Component, h, render } = window.preact;
+
+/** Example classful component */
+class App extends Component {
+	componentDidMount() {
+		this.setState({ message: 'Record Wall Control' });
+	}
+	render(props, state) {
+		return (
+			h('div', {id:'app'},
+				h(Header, { message: state.message }),
+				h(Main)
+			)
+		);
+	}
+}
+
+
+/** Components can just be pure functions */
+const Header = (props) => {
+	return h('header', null,
+		props.message && h('h1', null, props.message)
+	);
+};
+
+/** Instead of JSX, use: h(type, props, ...children) */
+class Main extends Component {
+  state = {
+    mode: 'color',
+    r: 0,
+    g: 0,
+    b: 255,
+    loop: false,
+    colors: [[0, 0, 255]],
+    change: false,
+    speed: 50,
+    direction: '',
+    brightness: 100,
+  };
+
+  sendToPython() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(this.state));
+  }
+
+  pickerChange(color, num) {
+    console.log('change', color)
+    this.setState((prevState, props) => {
+      const colors = prevState.colors;
+      colors[num-1] = [color[0], color[1], color[2]]
+      return {
+        colors
+      }
+    });
+  }
+
+  setupPicker(num) {
+    console.log('setupPicker' + num)
+    const pickerElement = document.getElementById('picker' + num);
+    const picker = new Picker({
+      parent: pickerElement,
+      editorFormat: 'rgb',
+      onDone: (color) => this.pickerChange(color.rgba, num)
+    });
+  }
+
+  addPicker() {
+    this.setState((prevState, props) => {
+      return {
+        colors: prevState.colors.concat([[255,255,255]])
+      }
+    })
+    setTimeout(() => {
+      this.setupPicker(this.state.colors.length)
+    },0)
+  }
+
+  pickers() {
+    const pickers = [];
+    for (let i = 0; i < this.state.colors.length; i++) {
+      console.log('render' + i)
+      const bgColor = `rgba(${this.state.colors[i][0]},${this.state.colors[i][1]},${this.state.colors[i][2]})`
+      pickers.push(
+        h('div', {
+          style: `position: relative; width: 50px; margin: 10px 0; padding: 10px 15px; box-shadow: 0 2px 3px rgba(0,0,0,.5); background-color: ${bgColor}`,
+          id: `picker${i+1}`
+        }, `Color ${i+1}`)
+      )
+    }
+    return h('div', {},
+      ...pickers
+    )
+  }
+
+  customButtons() {
+    const buttons = [];
+    for (let i = 0; i < this.state.colors.length; i++) {
+      buttons.push(
+        h('button', { onClick: (e) => { this.setState({
+            mode: 'color',
+            r: this.state.colors[i][0],
+            g: this.state.colors[i][1],
+            b: this.state.colors[i][2],
+            change: false
+          }) } },
+          `Color ${i + 1}`),
+      )
+    }
+    return h('div', {},
+      ...buttons
+    )
+  }
+
+  componentDidMount() {
+    for (let i = 0; i < this.state.colors.length; i++) {
+      this.setupPicker(i+1)
+    }
+  }
+
+  componentWillUnmount() {
+    console.log('destroying')
+  }
+
+	render(_, { mode, colors, speed, direction, brightness }) {
+    console.log('called')
+    return h('form', {
+        id: 'form',
+        onSubmit: (e) => {
+          e.preventDefault();
+          this.sendToPython();
+        }
+      },
+      h('p', {},
+        h('h4', {}, 'Solid Colors'),
+        h('button', { onClick: (e) => { this.setState({ mode: 'color', r: '0', b: '0', g: '255', change: false, loop: false  })} }, 'Green'),
+        h('button', { onClick: (e) => { this.setState({ mode: 'color', r: '0', b: '255', g: '0', change: false, loop: false  })} }, 'Blue'),
+        h('button', { onClick: (e) => { this.setState({ mode: 'color', r: '255', b: '0', g: '0', change: false, loop: false  })} }, 'Red'),
+        this.customButtons()
+      ),
+      h('p', {},
+        h('h4', {}, 'Modes'),
+        // h('button', { onClick: (e) => { this.setState({ mode: 'rainbow'  })} }, 'Rainbow'),
+        h('button', { onClick: (e) => { this.setState({ mode: 'random', loop: false, change: false  })} }, 'Random'),
+        h('button', { onClick: (e) => { this.setState({ mode: 'fade', loop: true, change: false  })} }, 'Fade'),
+        // h('button', { onClick: (e) => { this.setState({ mode: 'star_fade'  })} }, 'Star Fade'),
+        // h('button', { onClick: (e) => { this.setState({ mode: 'snake'  })} }, 'Snake'),
+      ),
+      // h('p', {},
+      //   h('h4', {}, 'Scrolling'),
+      //   h('button', { onClick: (e) => { this.setState({ mode: 'scroll', direction: 'tb' })} }, 'Top to Bottom'),
+      //   h('button', { onClick: (e) => { this.setState({ mode: 'scroll', direction: 'bt' })} }, 'Bottom to Top'),
+      //   h('button', { onClick: (e) => { this.setState({ mode: 'scroll', direction: 'lr' })} }, 'Left to Right'),
+      //   h('button', { onClick: (e) => { this.setState({ mode: 'scroll', direction: 'rl' })} }, 'Right to Left'),
+      // ),
+      h('p', {},
+        h('h4', {}, 'Settings'),
+        h('div', {},
+          h('label', {}, 'Colors'),
+          h('br', {}, null),
+          this.pickers(),
+          h('br', {}, null),
+          h('button', { onClick: (e) => { e.preventDefault(); this.addPicker() } }, 'Add Color'),
+        ),
+        h('div', {},
+          h('label', {}, 'Speed'),
+          h('br', {}, null),
+          h('input', { type: 'range', min: 0, max: 250, value: speed, placeholder: 'Speed', onChange: (e) => {
+            this.setState({ speed: e.target.value, change: true });
+            this.sendToPython()
+          } }, null)
+        ),
+        h('div', {},
+          h('label', {}, 'Brightness'),
+          h('br', {}, null),
+          h('input', { type: 'range', min: 0, max: 100, value: brightness, placeholder: 'Brightness', onChange: (e) => {
+            this.setState({ brightness: e.target.value, change: true });
+            this.sendToPython()
+          } }, null),
+        )
+      ),
+      h('button', { onClick: (e) => { this.setState({ mode: 'off', change: false }) } }, 'Turn Off')
+    );
+	}
+}
+
+render(h(App), document.body);
+  </script>
+</html>
