@@ -4,6 +4,16 @@ import time
 import math
 from threading import Thread
 
+THREAD = False
+SPEED = 100
+RESPONSE_RATE_MS = 200
+
+def adjust(brightness=1.0, speed=100):
+  print('Main | Adjusting settings. Brightness: %s Speed %sms' % (brightness, speed * (RESPONSE_RATE_MS / 1000)))
+  global SPEED
+  SPEED = speed
+  leds.changeBrightness(brightness)
+
 class Looper(Thread):
   __stop__ = False
 
@@ -13,17 +23,17 @@ class Looper(Thread):
 
   def run(self):
     while True:
-      print('%s | Running Thread for %s' % (self.getName(), self.Method))
       self.Method()
-      if self.__stop__:
-        break
+      for i in range(SPEED):
+        # Sleep for 200ms (Near instance for humans)
+        # This allows us to stop instantly
+        time.sleep((RESPONSE_RATE_MS / 1000))
+        if self.__stop__:
+          break
 
   def stop(self):
     print('%s | Stopping Thread for %s' % (self.getName(), self.Method))
     self.__stop__ = True
-
-
-THREAD = False
 
 class Handler(object):
   def __invalid(self):
@@ -52,7 +62,6 @@ class Handler(object):
       print(color)
       leds.changeColor(color)
       leds.show()
-      time.sleep(int(self.data['speed']) / 6000)
 
   def __init__(self, method_name, data):
     global THREAD
@@ -61,11 +70,11 @@ class Handler(object):
     method = getattr(self, method_name, self.__invalid)
     print('__init__ - %s - %s' % (data, THREAD))
 
-    if (data['change'] is not True and data['loop'] and THREAD is False):
+    if (data['loop'] and THREAD is False):
       print("Loop Handler called")
       THREAD = Looper(method)
       THREAD.start()
-    elif (data['change'] is not True and data['loop'] is not True):
+    elif (data['loop'] is not True):
       print("Singular Handler called")
       if (THREAD):
         THREAD.stop()
@@ -79,9 +88,6 @@ class Handler(object):
   def off(self):
     leds.blank()
     leds.show()
-
-  def change(self):
-    leds.changeBrightness(int(self.data['brightness']))
 
   def random(self):
     for i in range(leds.count):

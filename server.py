@@ -2,7 +2,7 @@ import socket
 import json
 import time
 import threading
-from modes import Handler
+import modes
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 __clientid__ = 'recordwall'
@@ -35,8 +35,12 @@ class Server(BaseHTTPRequestHandler):
         elif (self.path == '/google/token'):
             print('Token from google %d' % data)
         else:
-            # Call Handler for passed in mode
-            Handler(data['mode'], data)
+            if (data['change']):
+                # Adjust settings
+                modes.adjust(data['brightness'], data['speed'])
+            else:
+                # Call Handler for passed in mode
+                Handler(data['mode'], data)
         self._set_headers()
 
 
