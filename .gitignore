@@ -4,3 +4,4 @@ debug.log
 .env/lib
 .env/src
 .env/include
+*.pyc

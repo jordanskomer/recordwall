@@ -8,11 +8,12 @@ THREAD = False
 SPEED = 100
 RESPONSE_RATE_MS = 200
 
-def adjust(brightness=1.0, speed=100):
-  print('Main | Adjusting settings. Brightness: %s Speed %sms' % (brightness, speed * (RESPONSE_RATE_MS / 1000)))
+def adjust(brightness=100, speed=100):
+  print('Main | Adjusting settings. Brightness: %d Speed %dms' % (brightness, speed * (RESPONSE_RATE_MS / 1000)))
   global SPEED
   SPEED = speed
-  leds.changeBrightness(brightness)
+  leds.changeBrightness(brightness / 100.0)
+  leds.show()
 
 class Looper(Thread):
   __stop__ = False

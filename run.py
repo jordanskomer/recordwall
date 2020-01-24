@@ -1,5 +1,3 @@
 import server
 
-server.start(6969)
-
-# rpi-ws281x
+server.start(8080)
