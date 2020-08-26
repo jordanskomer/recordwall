@@ -7,12 +7,11 @@ previousBrightness = cache.get(cache.BRIGHTNESS)
 brightness = previousBrightness if previousBrightness else 1.0
 __pixels__ = neopixel.NeoPixel(board.D12, count, brightness=brightness, auto_write=False, pixel_order=neopixel.GRB)
 
-def __setColor(number, color=(0,0,0)):
+def __setColor__(number, color=(0,0,0)):
   __pixels__[number] = color
 
 
-
-def hsv_to_rgb(h, s, v):
+def __HSVtoRGB__(h, s, v):
   if s == 0.0: v*=255; return (int(v), int(v), int(v))
   i = int(h*6) # XXX assume int() truncates!
   f = (h*6)-i; p,q,t = 255*(v*(1-s)), 255*(v*(1-s*f)), 255*(v*(1-s*(1-f))); v*=255; i%=6
@@ -27,13 +26,15 @@ def show():
   __pixels__.show()
 
 def turnOn():
+  print('Turning on...')
+  # Grab color from cache
   prevColor = cache.get(cache.COLOR)
-  # @todo convert to spectrum
-  changeColor((255,0,0))
+  changeColor(prevColor if prevColor else (0.33,1,1))
   show()
   cache.put(cache.STATE, True)
 
 def turnOff():
+  print('Turning off...')
   blank()
   show()
   cache.put(cache.STATE, False)
@@ -46,11 +47,12 @@ def blank(number=False):
     __setColor(number)
   else:
     for x in range(count):
-      __setColor(x)
+      __setColor__(x)
 
-def changeColor(rgb):
+def changeColor(colorTuple, isHSV = False):
+  rgb = __HSVtoRGB__(*colorTuple) if isHSV else colorTuple
   for x in range(count):
-    __setColor(x, rgb)
+    __setColor__(x, rgb)
   cache.put(cache.COLOR, rgb)
 
 def changeBrightness(brightness):

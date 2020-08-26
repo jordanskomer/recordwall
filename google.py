@@ -41,6 +41,12 @@ class Intent(object):
     }
 
   def QUERY(requestId, userId, data):
+    print('QUERY: State: %s Brightness: %s Color: %s Mode: %s' % (
+      cache.get(cache.STATE),
+      cache.get(cache.BRIGHTNESS),
+      cache.get(cache.COLOR),
+      cache.get(cache.MODE)
+    ))
     return {
       'requestId': requestId,
       'payload': {
@@ -50,14 +56,14 @@ class Intent(object):
             'online': True,
             'on': cache.get(cache.STATE),
             'brightness': cache.get(cache.BRIGHTNESS),
-            'spectrumRgb': cache.get(cache.COLOR)
+            'spectrumHsv': cache.get(cache.COLOR)
           }
         }
       }
     }
 
   def EXECUTE(requestId, userId, data):
-    print('EXECUTE: State: %s Brightness: %s Color: %s Mode: %s' % (
+    print('PRE-EXECUTE: State: %s Brightness: %s Color: %s Mode: %s' % (
       cache.get(cache.STATE),
       cache.get(cache.BRIGHTNESS),
       cache.get(cache.COLOR),
@@ -73,16 +79,14 @@ class Intent(object):
         elif ('BrightnessAbsolute' in execute['command']):
           leds.changeBrightness(int(execute['params']['brightness']))
         elif ('ColorAbsolute' in execute['command']):
-          rgb = leds.hsv_to_rgb(
+          leds.changeColor((
             execute['params']['color']['spectrumHSV']['hue'] / 360.0,
             execute['params']['color']['spectrumHSV']['saturation'],
             execute['params']['color']['spectrumHSV']['value']
-          )
-          print(rgb)
-          leds.changeColor(rgb)
+          ), True)
         print('Ran %s' % execute['command'])
         leds.show()
-    print('EXECUTE: State: %s Brightness: %s Color: %s Mode: %s' % (
+    print('POST-EXECUTE: State: %s Brightness: %s Color: %s Mode: %s' % (
       cache.get(cache.STATE),
       cache.get(cache.BRIGHTNESS),
       cache.get(cache.COLOR),
@@ -101,7 +105,7 @@ class Intent(object):
               'online': True,
               'on': cache.get(cache.STATE),
               'brightness': cache.get(cache.BRIGHTNESS),
-              'spectrumRgb': cache.get(cache.COLOR)
+              'spectrumHSV': cache.get(cache.COLOR)
             }
           }
         ]

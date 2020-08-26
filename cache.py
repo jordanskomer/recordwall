@@ -13,7 +13,9 @@ USER = 'user'
 def get(key):
   result = __client__.get(key)
   if (result and (key is BRIGHTNESS or key is SPEED)):
-    return int(result)
+    return float(result)
+  elif (result and (key is COLOR)):
+    return eval(result)
   elif (result):
     return result
   else:
